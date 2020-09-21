@@ -1,5 +1,5 @@
-{"email" : "1201", "name" : "satish", "age" : 25, "height":  4.5}
-{"email" : "1202", "name" : "krishna", "age" : 28, "height":  6.5}
-{"email" : "1203", "name" : "amith", "age" : 39, "height":  7.5}
-{"email" : "1204", "name" : "javed", "age" : 23, "height":  8.5}
-{"email" : "1205", "name" : "prudvi", "age" : 23}
+{"email" : "1201", "name" : "satish", "age" : 25, "height":  4.5, "university":  "HUST"}
+{"email" : "1202", "name" : "krishna", "age" : 28, "height":  6.5, "university":  "NEU"}
+{"email" : "1203", "name" : "amith", "age" : 39, "height":  7.5, "university":  "HUST"}
+{"email" : "1204", "name" : "javed", "age" : 23, "height":  8.5, "university":  "NEU"}
+{"email" : "1205", "name" : "prudvi", "age" : 23, "university":  "NEU"}
