@@ -3,7 +3,7 @@ object Config {
   val QUORUM = "localhost"
   val PORT = 2181
 
-  // file path
+  // file(s) path
   val FILE_PATH = "file.json"
 
   // table characteristics
