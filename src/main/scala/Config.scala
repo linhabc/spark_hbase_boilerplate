@@ -9,7 +9,7 @@ object Config {
   val FILE_PATH = "/home/linhnguyen/file.csv"
 
   // csv schema
-  val csvSchema = new StructType()
+  val CSV_SCHEMA= new StructType()
     .add("col0",StringType,true)
     .add("col2",StringType,true)
     .add("col3",StringType,true)
