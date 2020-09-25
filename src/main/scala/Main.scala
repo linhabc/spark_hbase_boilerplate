@@ -20,7 +20,7 @@ object Main{
 
     val sqlContext = spark.sqlContext
     val df = sqlContext.read.format("com.databricks.spark.csv")
-      .schema(Config.csvSchema)
+      .schema(Config.CSV_SCHEMA)
       .option("delimiter", "|")
       .load(Config.FILE_PATH)
 
