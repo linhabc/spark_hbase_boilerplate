@@ -1,0 +1,67 @@
+drop table mobiscore.msc_voice;
+CREATE EXTERNAL TABLE mobiscore.msc_voice (`_c0` string,`_c1` string,`_c2` string,`_c3` string,`_c4` string,`_c5` string,`_c6` string,`_c7` string,`_c8` string,`_c9` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_msc_voice'
+
+drop table mobiscore.adjustement;
+CREATE EXTERNAL TABLE mobiscore.adjustement (`_c0` string,`_c1` string,`_c2` string,`_c3` string,`_c4` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_adjustement';
+
+drop table mobiscore.exhaust;
+CREATE EXTERNAL TABLE mobiscore.exhaust (`ISDN` string,`RULE_NAME` string,`QUOTA_NAME` string,`TIME` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_exhaust';
+
+
+drop table mobiscore.msc_tac;
+CREATE EXTERNAL TABLE mobiscore.msc_tac (`ISDN` string,`TAC` string,`DATE` string,`CALL_NUMBER` string,`TOTAL_DURATION` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_msc_tac';
+
+
+drop table mobiscore.handset;
+CREATE EXTERNAL TABLE mobiscore.handset (`ISDN` string,`BRAND` string,`MODEL` string,`OS_TYPE` string,`DATA` string,`FOLDER_DATE` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_handset';
+
+
+drop table mobiscore.msc_cell;
+CREATE EXTERNAL TABLE mobiscore.msc_cell (`ISDN` string,`CELL_ID` string,`DATE` string,`HOUR` string,`CALL_NUMBER` string,`TOTAL_DURATION` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_msc_cell';
+
+
+drop table mobiscore.msc_sms;
+CREATE EXTERNAL TABLE mobiscore.msc_sms (`ORG_ISDN` string,`DEST_ISDN` string,`SMS_TYPE` string,`DATE` string,`HOUR` string,`SMS_NUMBER` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_msc_sms';
+
+
+drop table mobiscore.mobile_internet;
+CREATE EXTERNAL TABLE mobiscore.mobile_internet (`ISDN` string,`CALL_STA_TIME` string,`PACKAGE_NAME` string,`TYPE` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_mobile_internet';
+
+
+drop table mobiscore.revenue;
+CREATE EXTERNAL TABLE mobiscore.revenue (`ISDN` string,`MONTH` string,`REVENUE` string,`msc` string,`SMS` string,`VAS` string,`DATA` string))
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_revenue';
+
+
+drop table mobiscore.sub_dump;
+CREATE EXTERNAL TABLE mobiscore.sub_dump (`ISDN` string,`DATE_ID` string,`MAIN_BALANCE` string,`BONUS` string,`DATE_LOCK` string,`STATUS` string,`ACCOUNT_CREATION_DATE` string,`BEGIN_ACTIVITY_DATE` string,`PACKAGE_ID` string,`SOURCE_SYS` string)
+row format delimited
+STORED AS PARQUET
+LOCATION '/user/MobiScore_DataSource/MobiCS_sub_dump'
+
