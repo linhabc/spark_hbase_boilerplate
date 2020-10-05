@@ -17,13 +17,3 @@ object Config {
                       "col7 STRING mb_sc:SOURCE_SYS"
 }
 
-  // csv schema
-  // val CSV_SCHEMA= new StructType()
-  //   .add("col0",StringType,true)
-  //   .add("col2",StringType,true)
-  //   .add("col3",StringType,true)
-  //   .add("col4",StringType,true)
-  //   .add("col5",StringType,true)
-  //   .add("col6",StringType,true)
-  //   .add("col7",StringType,true)
-  //   .add("col8",StringType,true)

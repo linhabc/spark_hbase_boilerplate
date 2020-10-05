@@ -2,6 +2,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.sql.functions.split
+import scala.io.Source
 
 object Main{
   def main(args: Array [String]){
@@ -11,20 +12,19 @@ object Main{
       .appName("Spark with hbase")
       .getOrCreate()
 
-    val conf = HBaseConfiguration.create()
-    conf.set("hbase.zookeeper.quorum", Config.QUORUM)
-    conf.setInt("hbase.zookeeper.property.clientPort", Config.PORT)
-    conf.set("hbase.rootdir","/apps/hbase/data")
-    conf.set("zookeeper.znode.parent","/hbase-unsecure")
-    conf.set("hbase.cluster.distributed","true")
+  val fileName = args(1)
+  val configDf = spark.read.option("multiline", "true").json(fileName)
 
-    new HBaseContext(spark.sparkContext, conf)
+   val conf = HBaseConfiguration.create()
+   conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
+   conf.set("hbase.zookeeper.property.clientPort", configDf.groupBy("PORT").mean().collect()(0)(0).toString)
+   conf.set("hbase.rootdir","/apps/hbase/data")
+   conf.set("zookeeper.znode.parent","/hbase-unsecure")
+   conf.set("hbase.cluster.distributed","true")
 
-    var df = spark.read.parquet(Config.FILE_PATH)
+   new HBaseContext(spark.sparkContext, conf)
 
-    df.show(10, false)
-
-    import spark.implicits._
+   var df = spark.read.parquet(configDf.groupBy("FILE_PATH").mean().collect()(0)(0).toString)
 
     df = df.withColumn("tmp", split(df("_c0"), "\\|"))
     df = df.withColumn("id", df("tmp").getItem(0))
@@ -44,19 +44,11 @@ object Main{
 
     df.show(30)
 
-    df.write.format("org.apache.hadoop.hbase.spark")
-      .option("hbase.table", Config.TABLE_NAME)
-      .option("hbase.columns.mapping", Config.TABLE_SCHEMA)
-      .save()
+   df.write.format("org.apache.hadoop.hbase.spark")
+     .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
+     .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
+     .save()
 
-    println("Done")
+   println("Done")
   }
 }
-
-    // val df = spark.read.json(Config.FILE_PATH)
-
-    // val sqlContext = spark.sqlContext
-    // val df = sqlContext.read.format("com.databricks.spark.csv")
-    //   .schema(Config.CSV_SCHEMA)
-    //   .option("delimiter", "|")
-    //   .load(Config.FILE_PATH)
