@@ -1,8 +1,7 @@
 {
   "QUORUM": "datamining-01,mbfscore-app01,mbfscore-app02",
   "PORT": "2181",
-  "FILE_PATH": "/user/MobiScore_DataSource/subscriber",
+  "FILE_PATH": "/user/MobiScore_DataSource/MobiCS_handset/",
   "TABLE_NAME": "hbase_db",
-  "TABLE_SCHEMA": "col0 STRING :key , col1 STRING mb_sc:ACTIVE_DATE, col2 STRING mb_sc:EXPIRE_DATE, col3 STRING mb_sc:SUB_TYPE, col4 STRING mb_sc:SUB_PREFIX, col5 INT mb_sc:AGE, col6 INT mb_sc:SEX, col7 STRING mb_sc:SOURCE_SYS",
-  "NUM_OF_COLUMN": "8"
+  "TABLE_SCHEMA": "new_id STRING :key, BRAND_OLD STRING hand_set:BRAND_OLD, MODEL_OLD STRING hand_set:MODEL_OLD, BRAND_NEW STRING hand_set:BRAND_NEW, MODEL_NEW STRING hand_set:MODEL_NEW, CHANGED_PHONE STRING hand_set:CHANGED_PHONE, CHANGED_TIME STRING hand_set:CHANGED_TIME"
 }
