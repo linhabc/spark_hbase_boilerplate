@@ -32,14 +32,14 @@ object Main{
   val latest_file = files(0).getPath.toString
   val near_latest_file = files(1).getPath.toString
 
-//  val conf = HBaseConfiguration.create()
-//  conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
-//  conf.set("hbase.zookeeper.property.clientPort", configDf.groupBy("PORT").mean().collect()(0)(0).toString)
-//  conf.set("hbase.rootdir","/apps/hbase/data")
-//  conf.set("zookeeper.znode.parent","/hbase-unsecure")
-//  conf.set("hbase.cluster.distributed","true")
-//
-//  new HBaseContext(spark.sparkContext, conf)
+  val conf = HBaseConfiguration.create()
+  conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
+  conf.set("hbase.zookeeper.property.clientPort", configDf.groupBy("PORT").mean().collect()(0)(0).toString)
+  conf.set("hbase.rootdir","/apps/hbase/data")
+  conf.set("zookeeper.znode.parent","/hbase-unsecure")
+  conf.set("hbase.cluster.distributed","true")
+
+  new HBaseContext(spark.sparkContext, conf)
 
   var df = spark.read.parquet(near_latest_file)
 
@@ -75,10 +75,10 @@ object Main{
 
   df_1.write.parquet("/user/MobiScore_Output/device_summary.parquet")
 
-//  df_1.write.format("org.apache.hadoop.hbase.spark")
-//    .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
-//    .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
-//    .save()
+  df_1.write.format("org.apache.hadoop.hbase.spark")
+    .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
+    .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
+    .save()
 
    println("Done")
   }
