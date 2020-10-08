@@ -73,7 +73,7 @@ object Main{
   df_1 = df_1.drop("old_id").drop("_c0")
   df_1.show(10)
 
-  df_1.write.parquet("/user/MobiScore_Output/device_summary.parquet")
+  df_1.write.mode("overwrite").parquet("/user/MobiScore_Output/device_summary.parquet")
 
   df_1.write.format("org.apache.hadoop.hbase.spark")
     .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
