@@ -1,7 +1,7 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.split
+import org.apache.spark.sql.functions.{avg, expr, max, min, split}
 
 object Main{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
@@ -13,50 +13,49 @@ object Main{
       .appName("Spark with hbase")
       .getOrCreate()
 
-  val fileName = args(1)
-  val configDf = spark.read.option("multiline", "true").json(fileName)
+    val fileName = args(1)
+    val configDf = spark.read.option("multiline", "true").json(fileName)
 
-   val conf = HBaseConfiguration.create()
-   conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
-   conf.set("hbase.zookeeper.property.clientPort", configDf.groupBy("PORT").mean().collect()(0)(0).toString)
-   conf.set("hbase.rootdir","/apps/hbase/data")
-   conf.set("zookeeper.znode.parent","/hbase-unsecure")
-   conf.set("hbase.cluster.distributed","true")
+    val conf = HBaseConfiguration.create()
+    conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
+    conf.set("hbase.zookeeper.property.clientPort", configDf.groupBy("PORT").mean().collect()(0)(0).toString)
+    conf.set("hbase.rootdir","/apps/hbase/data")
+    conf.set("zookeeper.znode.parent","/hbase-unsecure")
+    conf.set("hbase.cluster.distributed","true")
 
-   new HBaseContext(spark.sparkContext, conf)
+    new HBaseContext(spark.sparkContext, conf)
 
-   var df = spark.read.parquet(configDf.groupBy("FILE_PATH").mean().collect()(0)(0).toString)
+    var df = spark.read.parquet(configDf.groupBy("FILE_PATH").mean().collect()(0)(0).toString)
+//    `ISDN` string,`MONTH` string,`REVENUE` string,`msc` string,`SMS` string,`VAS` string,`DATA` string
 
-    df = df.withColumn("tmp", split(df("_c0"), "\\|"))
+    df = df.select("_c0","_c1", "_c2")
+    df = df.withColumnRenamed("_c0", "ISDN")
+           .withColumnRenamed("_c1", "MONTH")
+           .withColumnRenamed("_c2", "REVENUE")
 
-//    df = df.withColumn("col0", df("tmp").getItem(0))
-//          .withColumn("col1", df("tmp").getItem(1))
-//          .withColumn("col2", df("tmp").getItem(2))
-//          .withColumn("col3", df("tmp").getItem(3))
-//          .withColumn("col4", df("tmp").getItem(4))
-//          .withColumn("col5", df("tmp").getItem(5))
-//          .withColumn("col6", df("tmp").getItem(6))
-//          .withColumn("col7", df("tmp").getItem(7))
+//    df = df.groupBy("ISDN").agg(max(df("MONTH")).as("MAX_DATE"))
+//                                 .agg(min(df("MONTH")).as("MIN_DATE"))
+//                                 .agg(max(df("REVENUE")).as("MAX_REVENUE"))
+//                                 .agg(min(df("REVENUE")).as("MIN_REVENUE"))
+//                                 .agg(avg(df("REVENUE")).as("AVG_REVENUE"))
 
-    val num_of_columns : Int = toInt(configDf.groupBy("NUM_OF_COLUMN").mean().collect()(0)(0).toString)
+    df = df.groupBy("ISDN").agg(expr("max(MONTH)").as("MAX_DATE"),expr("min(MONTH)").as("MIN_DATE"),
+                                      expr("max(REVENUE)").as("MAX_REVENUE"),expr("min(REVENUE)").as("MIN_REVENUE"),
+                                      expr("avg(REVENUE)").as("AVG_REVENUE"))
 
-    for (i <- 0 until num_of_columns ){
-      df = df.withColumn("col".concat(i.toString), df("tmp").getItem(i))
-    }
-
-    df = df.drop(df("_c0"))
-    df = df.drop(df("tmp"))
-    df = df.drop(df("FileName"))
+    df = df.drop("MONTH").drop("REVENUE")
 
     df.printSchema()
 
-    df.show(30)
+    df.show(10)
 
-   df.write.format("org.apache.hadoop.hbase.spark")
-     .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
-     .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
-     .save()
+    df.write.mode("overwrite").parquet("/user/MobiScore_Output/revenue.parquet")
 
-   println("Done")
+    df.write.format("org.apache.hadoop.hbase.spark")
+      .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
+      .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
+      .save()
+
+    println("Done")
   }
 }
