@@ -1,7 +1,8 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.{avg, expr, max, min, split}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.{IntegerType, StringType}
 
 object Main{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
@@ -33,15 +34,12 @@ object Main{
            .withColumnRenamed("_c1", "MONTH")
            .withColumnRenamed("_c2", "REVENUE")
 
-//    df = df.groupBy("ISDN").agg(max(df("MONTH")).as("MAX_DATE"))
-//                                 .agg(min(df("MONTH")).as("MIN_DATE"))
-//                                 .agg(max(df("REVENUE")).as("MAX_REVENUE"))
-//                                 .agg(min(df("REVENUE")).as("MIN_REVENUE"))
-//                                 .agg(avg(df("REVENUE")).as("AVG_REVENUE"))
-
-    df = df.groupBy("ISDN").agg(expr("max(MONTH)").as("MAX_DATE"),expr("min(MONTH)").as("MIN_DATE"),
-                                      expr("max(REVENUE)").as("MAX_REVENUE"),expr("min(REVENUE)").as("MIN_REVENUE"),
+    df = df.groupBy("ISDN").agg(expr("max(MONTH)").as("MAX_DATE"), expr("min(MONTH)").as("MIN_DATE"),
+                                      expr("max(REVENUE)").as("MAX_REVENUE"), expr("min(REVENUE)").as("MIN_REVENUE"),
                                       expr("avg(REVENUE)").as("AVG_REVENUE"))
+
+    df = df.withColumn("AVG_REVENUE", col("AVG_REVENUE").cast(IntegerType))
+    df = df.withColumn("AVG_REVENUE", col("AVG_REVENUE").cast(StringType))
 
     df = df.drop("MONTH").drop("REVENUE")
 
