@@ -4,6 +4,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.sql.functions._
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.types.StringType
 
 
 object Main{
@@ -67,6 +68,9 @@ object Main{
   count_df = count_df.groupBy("_c0").agg((countDistinct("_c2") - 1).as("CHANGED_TIME"))
 
   df_1 = df_1.join(count_df, df_1("new_id") === count_df("_c0"))
+
+  df_1 = df_1.withColumn("CHANGED_PHONE", col("CHANGED_PHONE").cast(StringType))
+  df_1 = df_1.withColumn("CHANGED_TIME", col("CHANGED_TIME").cast(StringType))
 
   df_1.printSchema()
 
