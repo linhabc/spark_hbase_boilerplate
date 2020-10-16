@@ -1,8 +1,6 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{IntegerType, StringType}
 
 object Main{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
@@ -27,42 +25,13 @@ object Main{
     new HBaseContext(spark.sparkContext, conf)
 
     var df = spark.read.parquet(configDf.groupBy("FILE_PATH").mean().collect()(0)(0).toString)
-//    `ISDN` string,`MONTH` string,`REVENUE` string,`msc` string,`SMS` string,`VAS` string,`DATA` string
 
-    df = df.select("_c0","_c1", "_c2")
+    df = df.select("_c0","_c12")
     df = df.withColumnRenamed("_c0", "ISDN")
-           .withColumnRenamed("_c1", "MONTH")
-           .withColumnRenamed("_c2", "REVENUE")
-
-    df = df.withColumn("MONTH", expr("substring(MONTH, 5, 2)"))
-
-    df.createOrReplaceTempView("table")
-
-    val resultDf = spark.sql("select ISDN as RESULT_ISDN, sum((REVENUE - x_bar) * (MONTH - y_bar)) / sum((REVENUE - x_bar) * (REVENUE - x_bar)) as SLOPE " +
-      "from( select ISDN, REVENUE, avg(REVENUE) over (PARTITION BY ISDN) as x_bar, MONTH, avg(MONTH) over (PARTITION BY ISDN) as y_bar from table) s " +
-      "GROUP BY ISDN")
-
-    df = df.groupBy("ISDN").agg(expr("max(MONTH)").as("MAX_DATE"), expr("min(MONTH)").as("MIN_DATE"),
-                                expr("max(REVENUE)").as("MAX_REVENUE"), expr("min(REVENUE)").as("MIN_REVENUE"),
-                                expr("avg(REVENUE)").as("AVG_REVENUE"))
-
-    df = df.join(resultDf, df("ISDN") === resultDf("RESULT_ISDN"))
-
-    df = df.withColumn("AVG_REVENUE", col("AVG_REVENUE").cast(IntegerType))
-    df = df.withColumn("AVG_REVENUE", col("AVG_REVENUE").cast(StringType))
-
-    df = df.withColumn("SLOPE", expr("SLOPE * power(10, 8)" ))
-
-    df = df.withColumn("SLOPE", col("SLOPE").cast(IntegerType))
-    df = df.withColumn("SLOPE", col("SLOPE").cast(StringType))
-
-    df = df.drop("MONTH").drop("REVENUE").drop("RESULT_ISDN")
+           .withColumnRenamed("_c12", "OFFICIAL_SCORE")
 
     df.printSchema()
-
-    df.show(10)
-
-    df.write.mode("overwrite").parquet("/user/MobiScore_Output/revenue.parquet")
+    df.show(false)
 
     df.write.format("org.apache.hadoop.hbase.spark")
       .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
