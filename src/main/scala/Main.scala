@@ -31,6 +31,13 @@ object Main{
     conf.set("hbase.cluster.distributed","true")
     new HBaseContext(spark.sparkContext, conf)
 
+    // get feature score from config file
+    val SCORE_IN_TIME = configDf.groupBy("SCORE_IN_TIME").mean().collect()(0)(0).toString
+    val SCORE_SPARE_PAYMENT = configDf.groupBy("SCORE_SPARE_PAYMENT").mean().collect()(0)(0).toString
+    val SCORE_AVG_USING = configDf.groupBy("SCORE_AVG_USING").mean().collect()(0)(0).toString
+    val SCORE_AVG_PAYING = configDf.groupBy("SCORE_AVG_PAYING").mean().collect()(0)(0).toString
+    val SCORE_6_MONTH_IN_TIME = configDf.groupBy("SCORE_6_MONTH_IN_TIME").mean().collect()(0)(0).toString
+
     // get phome number
     var score = spark.read.parquet("/user/MobiScore_DataSource/subscriber")
     score = score.withColumn("tmp_score", split(score("_c0"), "\\|"))
@@ -69,11 +76,11 @@ object Main{
       result = result.withColumn("HIGHER_THAN_AVG_PAYING", result("SUM_PAY") >= avg_paying)
 
       //calculate payment history score
-      var tmp_score = result.na.fill(false)
-      tmp_score = tmp_score.withColumn("sc_1", when(col("PAY_IN_TIME") === true, 45).otherwise(-1))
-                          .withColumn("sc_2", when(col("SPARE_PAYMENT") === true, 1).otherwise(0))
-                          .withColumn("sc_3", when(col("HIGHER_THAN_AVG_USING") === true, 1).otherwise(0))
-                          .withColumn("sc_4", when(col("HIGHER_THAN_AVG_PAYING") === true, 1).otherwise(0))
+      var tmp_score = result.na.drop()
+      tmp_score = tmp_score.withColumn("sc_1", when(col("PAY_IN_TIME") === true, SCORE_IN_TIME).otherwise(-1))
+                          .withColumn("sc_2", when(col("SPARE_PAYMENT") === true, SCORE_SPARE_PAYMENT).otherwise(0))
+                          .withColumn("sc_3", when(col("HIGHER_THAN_AVG_USING") === true, SCORE_AVG_USING).otherwise(0))
+                          .withColumn("sc_4", when(col("HIGHER_THAN_AVG_PAYING") === true, SCORE_AVG_PAYING).otherwise(0))
                           .withColumn("score_" + month, col("sc_1")+col("sc_2")+col("sc_3")+col("sc_4"))
                           .select("_c1", "score_" + month)
 
@@ -109,14 +116,14 @@ object Main{
     }
 
     score = score.select("col0","score_3","score_4","score_5","score_6","score_7","score_8")
-    score = score.na.fill(0)
+//    score = score.na.fill(0)
+    score = score.na.drop()
 
     score.createOrReplaceTempView("score")
     score = score.withColumn("score_estimate", score("score_3")+score("score_4")+score("score_5")+score("score_6")+score("score_7")+score("score_8"))
-    score = score.withColumn("score_estimate", when(score("score_estimate") > 45*6, score("score_estimate") + 2*6).otherwise(score("score_estimate")))
-                 .select("col0", "score_estimate")
+    score = score.withColumn("score_estimate", when(score("score_estimate") > 45*6, score("score_estimate") + SCORE_6_MONTH_IN_TIME*6).otherwise(score("score_estimate")))
 
-    score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_estimate.parquet")
+    score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_estimate_drop.parquet")
     println("Done")
   }
 }

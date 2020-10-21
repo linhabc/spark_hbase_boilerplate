@@ -2,5 +2,10 @@
   "QUORUM": "datamining-01,mbfscore-app01,mbfscore-app02",
   "PORT": "2181",
   "TABLE_NAME": "hbase_db",
-  "TABLE_SCHEMA": ""
+  "TABLE_SCHEMA": "",
+  "SCORE_IN_TIME": "35",
+  "SCORE_6_MONTH_IN_TIME": "12",
+  "SCORE_SPARE_PAYMENT": "1",
+  "SCORE_AVG_USING": "1",
+  "SCORE_AVG_PAYING": "1"
 }
