@@ -44,6 +44,9 @@ object Main{
     score = score.withColumn("col0", score("tmp_score").getItem(0))
     score = score.select("col0")
 
+    // get real score
+//    var score_real = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
+
     for (file <- files){
       var df_debit = spark.read.parquet(file.getPath.toString)
 
