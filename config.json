@@ -3,9 +3,9 @@
   "PORT": "2181",
   "TABLE_NAME": "hbase_db",
   "TABLE_SCHEMA": "",
-  "SCORE_IN_TIME": "35",
-  "SCORE_6_MONTH_IN_TIME": "12",
-  "SCORE_SPARE_PAYMENT": "1",
+  "SCORE_IN_TIME": "32",
+  "SCORE_6_MONTH_IN_TIME": "13",
+  "SCORE_SPARE_PAYMENT": "2",
   "SCORE_AVG_USING": "1",
-  "SCORE_AVG_PAYING": "1"
+  "SCORE_AVG_PAYING": "3"
 }
