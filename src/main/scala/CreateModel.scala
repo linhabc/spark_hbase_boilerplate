@@ -1,17 +1,17 @@
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{SparkSession}
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.{col, expr, lit, split, sum, when}
+import org.apache.spark.sql.functions.{col, expr, lit, split, when}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.evaluation.{BinaryClassificationEvaluator, RegressionEvaluator}
-import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler, VectorIndexer}
-import org.apache.spark.ml.regression.{RandomForestRegressionModel, RandomForestRegressor}
+import org.apache.spark.ml.evaluation.{RegressionEvaluator}
+import org.apache.spark.ml.feature.{VectorAssembler}
+import org.apache.spark.ml.regression.{RandomForestRegressor}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 
 
-object Main{
+object CreateModel{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array [String]){
@@ -36,12 +36,6 @@ object Main{
     conf.set("hbase.cluster.distributed","true")
     new HBaseContext(spark.sparkContext, conf)
 
-    // get feature score from config file
-//    val SCORE_IN_TIME = configDf.groupBy("SCORE_IN_TIME").mean().collect()(0)(0).toString
-//    val SCORE_SPARE_PAYMENT = configDf.groupBy("SCORE_SPARE_PAYMENT").mean().collect()(0)(0).toString
-//    val SCORE_AVG_USING = configDf.groupBy("SCORE_AVG_USING").mean().collect()(0)(0).toString
-//    val SCORE_AVG_PAYING = configDf.groupBy("SCORE_AVG_PAYING").mean().collect()(0)(0).toString
-//    val SCORE_6_MONTH_IN_TIME = configDf.groupBy("SCORE_6_MONTH_IN_TIME").mean().collect()(0)(0).toString
     val SCORE_IN_TIME = 1
     val SCORE_SPARE_PAYMENT = 1
     val SCORE_AVG_USING = 1
@@ -106,7 +100,6 @@ object Main{
                           .withColumn("sc_2_"+ month, when(col("SPARE_PAYMENT") === true, SCORE_SPARE_PAYMENT).otherwise(0))
                           .withColumn("sc_3_"+ month, when(col("HIGHER_THAN_AVG_USING") === true, SCORE_AVG_USING).otherwise(0))
                           .withColumn("sc_4_"+ month, when(col("HIGHER_THAN_AVG_PAYING") === true, SCORE_AVG_PAYING).otherwise(0))
-//                          .withColumn("score_" + month, col("sc_1")+col("sc_2")+col("sc_3")+col("sc_4"))
                           .select("_c1", "sc_1_" + month, "sc_2_"+ month, "sc_3_"+ month, "sc_4_"+ month)
 
       score = score.join(tmp_score, score("col0") === tmp_score("_c1"), "left")
@@ -121,21 +114,23 @@ object Main{
     // get all feature in here
     score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
     score = score.na.drop()
-    score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6, 1).otherwise(0))
+    score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6, SCORE_6_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, SCORE_6_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, SCORE_6_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, SCORE_6_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, SCORE_6_MONTH_IN_TIME).otherwise(0))
 
     score = score.join(score_real, score("col0") === score_real("_c0"))
     score = score.drop("_c0")
+
+    score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_model_dataframe.parquet")
 
     // using mlib to get feature score
     val seed = 5043
 
     val assembler  = new VectorAssembler()
-      .setInputCols(Array("score_in_time", "score_spare_payment", "score_avg_using", "score_avg_paying", "score_6_month_in_time"))
+      .setInputCols(Array("score_in_time", "score_spare_payment", "score_avg_using", "score_avg_paying", "score_6_month_in_time", "score_5_month_in_time", "score_4_month_in_time", "score_3_month_in_time", "score_2_month_in_time"))
       .setOutputCol("features")
-
-//    val indexer = new StringIndexer()
-//      .setInputCol("real_score")
-//      .setOutputCol("label")
 
     val randomForestRegressor = new RandomForestRegressor()
       .setFeatureSubsetStrategy("auto")
@@ -155,7 +150,7 @@ object Main{
 
     // cross validation
     val paramGrid = new ParamGridBuilder()
-      .addGrid(randomForestRegressor.maxBins, Array(25, 28, 31))
+      .addGrid(randomForestRegressor.maxBins, Array(25, 28, 31, 32))
       .addGrid(randomForestRegressor.maxDepth, Array(4, 6, 8))
       .build()
 
@@ -177,7 +172,5 @@ object Main{
     cvPredictionDf.show(false)
     println(cvAccuracy)
     println("Done")
-
-    //    score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_estimate_drop.parquet")
   }
 }
