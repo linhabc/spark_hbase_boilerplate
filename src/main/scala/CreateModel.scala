@@ -115,10 +115,13 @@ object CreateModel{
     score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
     score = score.na.drop()
     score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6, SCORE_6_MONTH_IN_TIME).otherwise(0))
-    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, SCORE_6_MONTH_IN_TIME).otherwise(0))
-    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, SCORE_6_MONTH_IN_TIME).otherwise(0))
-    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, SCORE_6_MONTH_IN_TIME).otherwise(0))
-    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, SCORE_6_MONTH_IN_TIME).otherwise(0))
+
+    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, -1).otherwise(0))
+    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, -2).otherwise(0))
+    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, -3).otherwise(0))
+    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, -4).otherwise(0))
+    score = score.withColumn("score_1_month_in_time", when(score("score_in_time") === 1, -5).otherwise(0))
+
 
     score = score.join(score_real, score("col0") === score_real("_c0"))
     score = score.drop("_c0")

@@ -102,11 +102,11 @@ object Predict{
     // get all feature in here
     score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
     score = score.na.drop()
-    score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6, 1).otherwise(0))
-    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, 1).otherwise(0))
-    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, 1).otherwise(0))
-    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, 1).otherwise(0))
-    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, 1).otherwise(0))
+    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, -1).otherwise(0))
+    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, -2).otherwise(0))
+    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, -3).otherwise(0))
+    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, -4).otherwise(0))
+    score = score.withColumn("score_1_month_in_time", when(score("score_in_time") === 1, -5).otherwise(0))
 
     // predict using model
     score = cvModelLoaded.transform(score)
