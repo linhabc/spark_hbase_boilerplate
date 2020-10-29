@@ -1,10 +1,10 @@
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.sql.functions.{col, expr, lit, split, when}
 import org.apache.hadoop.fs.Path
-import org.apache.spark.ml.tuning.{CrossValidatorModel}
+import org.apache.spark.ml.tuning.CrossValidatorModel
 
 object Predict{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
@@ -30,6 +30,17 @@ object Predict{
     conf.set("zookeeper.znode.parent","/hbase-unsecure")
     conf.set("hbase.cluster.distributed","true")
     new HBaseContext(spark.sparkContext, conf)
+
+    val SCORE_IN_TIME = toInt(configDf.groupBy("SCORE_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_SPARE_PAYMENT = toInt(configDf.groupBy("SCORE_SPARE_PAYMENT").mean().collect()(0)(0).toString)
+    val SCORE_AVG_USING = toInt(configDf.groupBy("SCORE_AVG_USING").mean().collect()(0)(0).toString)
+    val SCORE_AVG_PAYING = toInt(configDf.groupBy("SCORE_AVG_PAYING").mean().collect()(0)(0).toString)
+    val SCORE_6_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_6_MONTH_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_5_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_5_MONTH_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_4_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_4_MONTH_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_3_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_3_MONTH_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_2_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_2_MONTH_IN_TIME").mean().collect()(0)(0).toString)
+    val SCORE_1_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_1_MONTH_IN_TIME").mean().collect()(0)(0).toString)
 
     // load random forest model
     val cvModelLoaded = CrossValidatorModel
@@ -94,24 +105,34 @@ object Predict{
       //      score = score.withColumn("score_" + month, col("score_" + month).cast(IntegerType))
     }
 
-    score = score.withColumn("score_in_time", score("sc_1_"+startMonth)+score("sc_1_"+(startMonth+1))+score("sc_1_"+(startMonth+2))+score("sc_1_"+(startMonth+3))+score("sc_1_"+(startMonth+4))+score("sc_1_"+(startMonth+5)))
-    score = score.withColumn("score_spare_payment", score("sc_2_"+startMonth)+score("sc_2_"+(startMonth+1))+score("sc_2_"+(startMonth+2))+score("sc_2_"+(startMonth+3))+score("sc_2_"+(startMonth+4))+score("sc_2_"+(startMonth+5)))
-    score = score.withColumn("score_avg_using", score("sc_3_"+startMonth)+score("sc_3_"+(startMonth+1))+score("sc_3_"+(startMonth+2))+score("sc_3_"+(startMonth+3))+score("sc_3_"+(startMonth+4))+score("sc_3_"+(startMonth+5)))
-    score = score.withColumn("score_avg_paying", score("sc_4_"+startMonth)+score("sc_4_"+(startMonth+1))+score("sc_4_"+(startMonth+2))+score("sc_4_"+(startMonth+3))+score("sc_4_"+(startMonth+4))+score("sc_4_"+(startMonth+5)))
+    score = score.withColumn("score_in_time", (score("sc_1_"+startMonth)+score("sc_1_"+(startMonth+1))+score("sc_1_"+(startMonth+2))+score("sc_1_"+(startMonth+3))+score("sc_1_"+(startMonth+4))+score("sc_1_"+(startMonth+5)))*SCORE_IN_TIME)
+    score = score.withColumn("score_spare_payment", (score("sc_2_"+startMonth)+score("sc_2_"+(startMonth+1))+score("sc_2_"+(startMonth+2))+score("sc_2_"+(startMonth+3))+score("sc_2_"+(startMonth+4))+score("sc_2_"+(startMonth+5)))*SCORE_SPARE_PAYMENT)
+    score = score.withColumn("score_avg_using", (score("sc_3_"+startMonth)+score("sc_3_"+(startMonth+1))+score("sc_3_"+(startMonth+2))+score("sc_3_"+(startMonth+3))+score("sc_3_"+(startMonth+4))+score("sc_3_"+(startMonth+5)))*SCORE_AVG_USING)
+    score = score.withColumn("score_avg_paying", (score("sc_4_"+startMonth)+score("sc_4_"+(startMonth+1))+score("sc_4_"+(startMonth+2))+score("sc_4_"+(startMonth+3))+score("sc_4_"+(startMonth+4))+score("sc_4_"+(startMonth+5)))*SCORE_AVG_PAYING)
 
     // get all feature in here
     score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
     score = score.na.drop()
-    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5, -1).otherwise(0))
-    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4, -2).otherwise(0))
-    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3, -3).otherwise(0))
-    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2, -4).otherwise(0))
-    score = score.withColumn("score_1_month_in_time", when(score("score_in_time") === 1, -5).otherwise(0))
+    score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6*SCORE_IN_TIME, SCORE_6_MONTH_IN_TIME).otherwise(0))
+
+    score = score.withColumn("score_5_month_in_time", when(score("score_in_time") === 5*SCORE_IN_TIME, SCORE_5_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_4_month_in_time", when(score("score_in_time") === 4*SCORE_IN_TIME, SCORE_4_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_3_month_in_time", when(score("score_in_time") === 3*SCORE_IN_TIME, SCORE_3_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2*SCORE_IN_TIME, SCORE_2_MONTH_IN_TIME).otherwise(0))
+    score = score.withColumn("score_1_month_in_time", when(score("score_in_time") === SCORE_IN_TIME, SCORE_1_MONTH_IN_TIME).otherwise(0))
 
     // predict using model
     score = cvModelLoaded.transform(score)
 
     score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_model_predict.parquet")
+
+    score.createOrReplaceTempView("score_predict")
+
+    val real_score = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
+    real_score.createOrReplaceTempView("real_score")
+
+    val result = spark.sql("select count(*) from (select r._c0, _c12, s.prediction, (prediction/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 and s.prediction > 0) tmp where tmp.ratio >= 25 and tmp.ratio < 36")
+    result.show(false)
     println("Done")
   }
 }
