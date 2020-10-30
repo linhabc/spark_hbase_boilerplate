@@ -69,7 +69,6 @@ object CreateModelDataFrame{
 
       // filter outlier then calculate avg value
       val result_filter = result.filter(result("SUM_USE") < 4000000 || result("SUM_PAY") < 4000000)
-
       val avg_using = result_filter.agg(expr("avg(SUM_USE)").as("AVG_USE")).select(col("AVG_USE")).collect()(0)(0)
       val avg_paying = result_filter.agg(expr("avg(SUM_PAY)").as("AVG_PAY")).select(col("AVG_PAY")).collect()(0)(0)
 
@@ -82,26 +81,13 @@ object CreateModelDataFrame{
       result = result.withColumn("HIGHER_THAN_AVG_USING", result("SUM_USE") >= avg_using)
       result = result.withColumn("HIGHER_THAN_AVG_PAYING", result("SUM_PAY") >= avg_paying)
 
-      // feature: paying date
-      df_debit.createOrReplaceTempView("table")
-      var tmp_df = spark.sql("select _c1, datediff(_c2 , _c4) AS datediff from table")
-      tmp_df.createOrReplaceTempView("table")
-      tmp_df = spark.sql("select _c1, max(datediff) as max_date, min(datediff) as min_date, avg(datediff) as avg_date from table")
-      tmp_df.na.fill(-180)
-      tmp_df = tmp_df.withColumnRenamed("_c1", "id")
-      result = result.join(tmp_df, result("_c1") === tmp_df("id"))
-      result = result.drop("id")
-
       //calculate payment history score
       var tmp_score = result.na.drop()
       tmp_score = tmp_score.withColumn("sc_1_"+ month, when(col("PAY_IN_TIME") === true, 1).otherwise(0))
-        .withColumn("sc_2_"+ month, when(col("SPARE_PAYMENT") === true, 1).otherwise(0))
-        .withColumn("sc_3_"+ month, when(col("HIGHER_THAN_AVG_USING") === true, 1).otherwise(0))
-        .withColumn("sc_4_"+ month, when(col("HIGHER_THAN_AVG_PAYING") === true, 1).otherwise(0))
-        .withColumnRenamed("max_date", "max_date_" + month)
-        .withColumnRenamed("min_date", "min_date_" + month)
-        .withColumnRenamed("avg_date", "avg_date_" + month)
-        .select("_c1", "sc_1_" + month, "sc_2_"+ month, "sc_3_"+ month, "sc_4_"+ month, "max_date_" + month, "min_date_" + month, "avg_date_" + month)
+                           .withColumn("sc_2_"+ month, when(col("SPARE_PAYMENT") === true, 1).otherwise(0))
+                           .withColumn("sc_3_"+ month, when(col("HIGHER_THAN_AVG_USING") === true && col("HIGHER_THAN_AVG_PAYING") === true, 1).otherwise(0))
+                           .withColumn("sc_4_"+ month, when(col("HIGHER_THAN_AVG_PAYING") === true, 1).otherwise(0))
+                           .select("_c1", "sc_1_" + month, "sc_2_"+ month, "sc_3_"+ month, "sc_4_"+ month)
 
       score = score.join(tmp_score, score("col0") === tmp_score("_c1"), "left")
     }
@@ -109,7 +95,6 @@ object CreateModelDataFrame{
     score = score.drop("_c1")
     score.show(false)
     score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_model_dataframe.parquet")
-
     println("Done")
   }
 }

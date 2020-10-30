@@ -92,14 +92,29 @@ object Predict{
       result = result.withColumn("HIGHER_THAN_AVG_USING", result("SUM_USE") >= avg_using)
       result = result.withColumn("HIGHER_THAN_AVG_PAYING", result("SUM_PAY") >= avg_paying)
 
+      // feature: paying date
+      df_debit.createOrReplaceTempView("table")
+      var tmp_df = spark.sql("select _c1, datediff(_c2 , _c4) AS datediff from table")
+      tmp_df.createOrReplaceTempView("table")
+      tmp_df = spark.sql("select _c1, max(datediff) as max_date, min(datediff) as min_date, avg(datediff) as avg_date from table group by _c1")
+      tmp_df.na.fill(-180)
+      tmp_df = tmp_df.withColumnRenamed("_c1", "id")
+      result = result.join(tmp_df, result("_c1") === tmp_df("id"))
+      result = result.withColumn("max_date", when(result("SPARE_PAYMENT") === true, 1).otherwise(result("max_date")))
+      result = result.withColumn("min_date", when(result("SPARE_PAYMENT") === true, 1).otherwise(result("min_date")))
+      result = result.withColumn("avg_date", when(result("SPARE_PAYMENT") === true, 1).otherwise(result("avg_date")))
+      result = result.drop("id")
+
       //calculate payment history score
       var tmp_score = result.na.drop()
       tmp_score = tmp_score.withColumn("sc_1_"+ month, when(col("PAY_IN_TIME") === true, 1).otherwise(0))
         .withColumn("sc_2_"+ month, when(col("SPARE_PAYMENT") === true, 1).otherwise(0))
         .withColumn("sc_3_"+ month, when(col("HIGHER_THAN_AVG_USING") === true, 1).otherwise(0))
         .withColumn("sc_4_"+ month, when(col("HIGHER_THAN_AVG_PAYING") === true, 1).otherwise(0))
-        //                          .withColumn("score_" + month, col("sc_1")+col("sc_2")+col("sc_3")+col("sc_4"))
-        .select("_c1", "sc_1_" + month, "sc_2_"+ month, "sc_3_"+ month, "sc_4_"+ month)
+//        .withColumnRenamed("max_date", "max_date_" + month)
+//        .withColumnRenamed("min_date", "min_date_" + month)
+        .withColumnRenamed("avg_date", "avg_date_" + month)
+        .select("_c1", "sc_1_" + month, "sc_2_"+ month, "sc_3_"+ month, "sc_4_"+ month, "max_date_" + month, "min_date_" + month, "avg_date_" + month)
 
       score = score.join(tmp_score, score("col0") === tmp_score("_c1"), "left")
       //      score = score.withColumn("score_" + month, col("score_" + month).cast(IntegerType))
@@ -110,8 +125,12 @@ object Predict{
     score = score.withColumn("score_avg_using", (score("sc_3_"+startMonth)+score("sc_3_"+(startMonth+1))+score("sc_3_"+(startMonth+2))+score("sc_3_"+(startMonth+3))+score("sc_3_"+(startMonth+4))+score("sc_3_"+(startMonth+5)))*SCORE_AVG_USING)
     score = score.withColumn("score_avg_paying", (score("sc_4_"+startMonth)+score("sc_4_"+(startMonth+1))+score("sc_4_"+(startMonth+2))+score("sc_4_"+(startMonth+3))+score("sc_4_"+(startMonth+4))+score("sc_4_"+(startMonth+5)))*SCORE_AVG_PAYING)
 
+//    score = score.withColumn("score_max_date", (score("max_date_"+startMonth)+score("max_date_"+(startMonth+1))+score("max_date_"+(startMonth+2))+score("max_date_"+(startMonth+3))+score("max_date_"+(startMonth+4))+score("max_date_"+(startMonth+5)))/6)
+//    score = score.withColumn("score_min_date", (score("min_date_"+startMonth)+score("min_date_"+(startMonth+1))+score("min_date_"+(startMonth+2))+score("min_date_"+(startMonth+3))+score("min_date_"+(startMonth+4))+score("min_date_"+(startMonth+5)))/6)
+    score = score.withColumn("score_avg_date", (score("avg_date_"+startMonth)+score("avg_date_"+(startMonth+1))+score("avg_date_"+(startMonth+2))+score("avg_date_"+(startMonth+3))+score("avg_date_"+(startMonth+4))+score("avg_date_"+(startMonth+5)))/6)
+
     // get all feature in here
-    score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
+    score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying",  "score_avg_date")
     score = score.na.drop()
     score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6*SCORE_IN_TIME, SCORE_6_MONTH_IN_TIME).otherwise(0))
 

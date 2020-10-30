@@ -121,8 +121,12 @@ object CreateGBModel{
     score = score.withColumn("score_avg_using", (score("sc_3_"+startMonth)+score("sc_3_"+(startMonth+1))+score("sc_3_"+(startMonth+2))+score("sc_3_"+(startMonth+3))+score("sc_3_"+(startMonth+4))+score("sc_3_"+(startMonth+5)))*SCORE_AVG_USING)
     score = score.withColumn("score_avg_paying", (score("sc_4_"+startMonth)+score("sc_4_"+(startMonth+1))+score("sc_4_"+(startMonth+2))+score("sc_4_"+(startMonth+3))+score("sc_4_"+(startMonth+4))+score("sc_4_"+(startMonth+5)))*SCORE_AVG_PAYING)
 
+//    score = score.withColumn("score_max_date", (score("max_date_"+startMonth)+score("max_date_"+(startMonth+1))+score("max_date_"+(startMonth+2))+score("max_date_"+(startMonth+3))+score("max_date_"+(startMonth+4))+score("max_date_"+(startMonth+5)))/6)
+//    score = score.withColumn("score_min_date", (score("min_date_"+startMonth)+score("min_date_"+(startMonth+1))+score("min_date_"+(startMonth+2))+score("min_date_"+(startMonth+3))+score("min_date_"+(startMonth+4))+score("min_date_"+(startMonth+5)))/6)
+    score = score.withColumn("score_avg_date", (score("avg_date_"+startMonth)+score("avg_date_"+(startMonth+1))+score("avg_date_"+(startMonth+2))+score("avg_date_"+(startMonth+3))+score("avg_date_"+(startMonth+4))+score("avg_date_"+(startMonth+5)))/6)
+
     //    get all feature in here
-    score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying")
+    score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying", "score_avg_date")
     score = score.na.drop()
     score = score.withColumn("score_6_month_in_time", when(score("score_in_time") === 6*SCORE_IN_TIME, SCORE_6_MONTH_IN_TIME).otherwise(0))
 
