@@ -150,7 +150,7 @@ object Predict{
     val real_score = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
     real_score.createOrReplaceTempView("real_score")
 
-    val result = spark.sql("select count(*) from (select r._c0, _c12, s.prediction, (prediction/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 and s.prediction > 0) tmp where tmp.ratio >= 25 and tmp.ratio < 36")
+    val result = spark.sql("select count(*) from (select r._c0, _c12, s.prediction, (prediction/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 and s.prediction > 0) tmp where tmp.ratio >= 25 and tmp.ratio < 38")
     result.show(false)
     println("Done")
   }
