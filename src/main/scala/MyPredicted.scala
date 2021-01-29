@@ -1,7 +1,7 @@
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.{when}
+import org.apache.spark.sql.functions.{lit, when}
 
 object MyPredicted{
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
@@ -23,6 +23,8 @@ object MyPredicted{
 //    conf.set("hbase.cluster.distributed","true")
 //    new HBaseContext(spark.sparkContext, conf)
 
+    val startMonth = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+
     val SCORE_IN_TIME = toInt(configDf.groupBy("SCORE_IN_TIME").mean().collect()(0)(0).toString)
     val SCORE_SPARE_PAYMENT = toInt(configDf.groupBy("SCORE_SPARE_PAYMENT").mean().collect()(0)(0).toString)
     val SCORE_AVG_USING = toInt(configDf.groupBy("SCORE_AVG_USING").mean().collect()(0)(0).toString)
@@ -38,7 +40,6 @@ object MyPredicted{
     val SCORE_1_MONTH_IN_TIME = toInt(configDf.groupBy("SCORE_1_MONTH_IN_TIME").mean().collect()(0)(0).toString)
 
     var score = spark.read.parquet("/user/MobiScore_Output/post_payment/score_model_dataframe.parquet")
-    val startMonth = 3
 
     score = score.withColumn("score_in_time", (score("sc_1_"+startMonth)+score("sc_1_"+(startMonth+1))+score("sc_1_"+(startMonth+2))+score("sc_1_"+(startMonth+3))+score("sc_1_"+(startMonth+4))+score("sc_1_"+(startMonth+5)))*SCORE_IN_TIME)
     score = score.withColumn("score_spare_payment", (score("sc_2_"+startMonth)+score("sc_2_"+(startMonth+1))+score("sc_2_"+(startMonth+2))+score("sc_2_"+(startMonth+3))+score("sc_2_"+(startMonth+4))+score("sc_2_"+(startMonth+5)))*SCORE_SPARE_PAYMENT)
@@ -58,7 +59,10 @@ object MyPredicted{
     score = score.withColumn("score_2_month_in_time", when(score("score_in_time") === 2*SCORE_IN_TIME, SCORE_2_MONTH_IN_TIME).otherwise(0))
     score = score.withColumn("score_1_month_in_time", when(score("score_in_time") === SCORE_IN_TIME, SCORE_1_MONTH_IN_TIME).otherwise(0))
 
-    score = score.withColumn("score_estimate", score("score_in_time")+score("score_spare_payment")+score("score_avg_using")+score("score_avg_paying")+score("score_6_month_in_time")+score("score_5_month_in_time")+score("score_4_month_in_time")+score("score_3_month_in_time")+score("score_2_month_in_time")+score("score_1_month_in_time")+score("score_1_month_in_time") + score("score_using_bank")+ score("score_not_using_packet"))
+    score = score.withColumn("score", lit(114)+score("score_in_time")+score("score_spare_payment")+score("score_avg_using")+score("score_avg_paying")+score("score_6_month_in_time")+score("score_5_month_in_time")+score("score_4_month_in_time")+score("score_3_month_in_time")+score("score_2_month_in_time")+score("score_1_month_in_time")+score("score_1_month_in_time") + score("score_using_bank")+ score("score_not_using_packet"))
+
+    // select only score col
+    score = score.select("col0", "score")
     score.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/score_estimate.parquet")
 
     score.createOrReplaceTempView("score_predict")
@@ -66,7 +70,7 @@ object MyPredicted{
     val real_score = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
     real_score.createOrReplaceTempView("real_score")
 
-    val result = spark.sql("select count(*) from (select r._c0, _c12, s.score_estimate, (score_estimate/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 ) as tmp where tmp.ratio >= 25 and tmp.ratio <= 38")
+    val result = spark.sql("select count(*) from (select r._c0, _c12, s.score, (score/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 ) as tmp where tmp.ratio >= 25 and tmp.ratio <= 38")
     result.show(false)
     println("Done")
   }

@@ -1,4 +1,3 @@
-import CreateModelDataFrame.toInt
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, expr, lit, split, when}
@@ -8,6 +7,7 @@ import org.apache.spark.sql.DataFrame
 
 object UsingPacket {
   def hasColumn(df: DataFrame, path: String) = Try(df(path)).isSuccess
+  def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
@@ -18,24 +18,19 @@ object UsingPacket {
     val hd_conf = spark.sparkContext.hadoopConfiguration
     val fs = FileSystem.get(hd_conf)
     val dirPath = new Path("/user/MobiScore_DataSource/MobiCS_mobile_internet")
-    val files = fs.listStatus(dirPath )
+    val files = fs.listStatus(dirPath)
 
     // get phone number
-    var df = spark.read.parquet("/user/MobiScore_DataSource/subscriber")
-    df = df.withColumn("tmp_score", split(df("_c0"), "\\|"))
-    df = df.withColumn("col0", df("tmp_score").getItem(0))
-    df = df.withColumn("col1", df("tmp_score").getItem(7))
-    df = df.filter(df("col1") === "POS")
-    df = df.select("col0")
+    var df = spark.read.parquet("/user/MobiScore_Output/post_payment/subscriber.parquet")
+    df = df.select("col0").distinct()
 
     val const_df = df
 
-    var result = df
-    result = result.withColumnRenamed("col0", "_c0")
+    val fileName = args(1)
+    val configDf = spark.read.option("multiline", "true").json(fileName)
+    val startMonth = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
 
-//    var i = 0
-    for (i <-  3 to 8){
-
+    for (i <-  startMonth to startMonth+5){
       for (file <- files){
         // get month from filePath file.getPath.toString
         val month_real = toInt(file.getPath.toString.slice(105, 105 + 2))
@@ -67,16 +62,11 @@ object UsingPacket {
         }
       }
 
-      // join with result dataframe
-      result = result.join(df, result("_c0") === df("col0"), "left")
-      result = result.drop("col0")
-
       df.show(false)
       df.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+i+").parquet")
       df = const_df
     }
 
-    result.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe.parquet")
     println("Done")
   }
 }
