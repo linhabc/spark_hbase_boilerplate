@@ -25,7 +25,8 @@ object GetUserSubscribe{
 
     val fileName = args(1)
     val configDf = spark.read.option("multiline", "true").json(fileName)
-    val startMonth = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+    val START_MONTH = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+    val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
     for (file <- files){
       var df_debit = spark.read.parquet(file.getPath.toString)
@@ -36,10 +37,15 @@ object GetUserSubscribe{
 //      val month = toInt(df_debit.select(col("MONTH")).collect()(0)(0).toString)
 
       val month = toInt(file.getPath.toString.slice(95, 95 + 2))
-      println(file.getPath.toString)
-      println(month)
 
-      if(startMonth <= month && month <= startMonth + 5) {
+      val year = toInt(file.getPath.toString.slice(91, 91 + 4))
+
+
+      if(START_MONTH <= month && month <= START_MONTH + 5 && year == YEAR) {
+        println(year)
+        println(file.getPath.toString)
+        println(month)
+
         df_debit.createOrReplaceTempView("table")
         val user_in_month = spark.sql("select distinct _c0 as col0 from table")
 

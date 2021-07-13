@@ -14,3 +14,9 @@
 ## Link
 
 - http://localhost:16010/master-status for the Master Server
+
+## mbScore
+spark-submit --conf spark.driver.memory=20g --class "GetUserSubscribe" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
+spark-submit --conf spark.driver.memory=20g --class "UsingPacket" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
+spark-submit --conf spark.driver.memory=20g --class "CreateModelDataFrame" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
+spark-submit --conf spark.driver.memory=15g --class "MyPredicted" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json

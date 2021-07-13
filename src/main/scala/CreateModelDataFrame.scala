@@ -4,8 +4,10 @@ import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.sql.functions.{col, expr, lit, split, when}
 import org.apache.hadoop.fs.Path
+import org.apache.log4j.{Level, Logger}
 
 object CreateModelDataFrame{
+  Logger.getLogger("org").setLevel(Level.ERROR)
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array [String]){
@@ -43,10 +45,11 @@ object CreateModelDataFrame{
       df_debit = df_debit.drop(df_debit("_c0"))
 
       val month = toInt(df_debit.select(col("MONTH")).collect()(0)(0).toString)
+      val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
       if(startMonth <= month && month <= startMonth + 5) {
         // read using packet dataframe
-        val packet_df = spark.read.parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+month+").parquet")
+        val packet_df = spark.read.parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+month+")("+YEAR+").parquet")
 
         df_debit.createOrReplaceTempView("table")
         var result = spark.sql("select distinct _c1, _c3, _c5, _c6 from table")

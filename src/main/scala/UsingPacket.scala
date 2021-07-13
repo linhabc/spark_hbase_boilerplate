@@ -1,11 +1,14 @@
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, expr, lit, split, when}
+
 import scala.util.Try
 import org.apache.spark.sql.DataFrame
 
 
 object UsingPacket {
+  Logger.getLogger("org").setLevel(Level.ERROR)
   def hasColumn(df: DataFrame, path: String) = Try(df(path)).isSuccess
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
@@ -28,14 +31,20 @@ object UsingPacket {
 
     val fileName = args(1)
     val configDf = spark.read.option("multiline", "true").json(fileName)
-    val startMonth = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+    val START_MONTH = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+    val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
-    for (i <-  startMonth to startMonth+5){
+    for (i <- START_MONTH to START_MONTH + 5){
       for (file <- files){
         // get month from filePath file.getPath.toString
         val month_real = toInt(file.getPath.toString.slice(105, 105 + 2))
+        val year = toInt(file.getPath.toString.slice(101, 101 + 4))
         //filter months
-        if (i == month_real ){
+        if (i == month_real && year == YEAR){
+          println(year)
+          println(file.getPath.toString)
+          println(month_real)
+
           // get month from date, total packet
           var df_internet = spark.read.parquet(file.getPath.toString)
           df_internet = df_internet.withColumn("MONTH", expr("substring(_c1, 6, 2)"))
@@ -63,7 +72,7 @@ object UsingPacket {
       }
 
       df.show(false)
-      df.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+i+").parquet")
+      df.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+i+")("+YEAR+").parquet")
       df = const_df
     }
 
