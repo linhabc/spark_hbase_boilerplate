@@ -14,3 +14,9 @@
 ## Link
 
 - http://localhost:16010/master-status for the Master Server
+
+## credit length table
+- /user/MobiScore_DataSource/FINTECH_LOYALTY: tính toán hạng hội viên thay đổi theo thời gian (cột LOYALTY_VAL)
+- /user/MobiScore_DataSource/MobiCS_subscriber/FileName=subscriber_20200(last_month).txt: thời gian đăng ký thuê bao tới nay (cột LOS)
+- /user/MobiScore_DataSource/SODEP/FileName=SODEP.txt: điểm cho số đẹp (cột SODEP)
+- /user/MobiScore_DataSource/VLR_MONTHLY/: số ngày bật máy cảu thuê bao (cột VLR_AVAIL)
