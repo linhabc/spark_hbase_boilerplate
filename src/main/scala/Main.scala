@@ -1,9 +1,12 @@
-import org.apache.spark.sql.SparkSession
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.sql.{SparkSession}
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.split
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.functions.{col, expr, split, when, max, min}
 
 object Main{
+  Logger.getLogger("org").setLevel(Level.ERROR)
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array [String]){
@@ -25,37 +28,59 @@ object Main{
 
    new HBaseContext(spark.sparkContext, conf)
 
-   var df = spark.read.parquet(configDf.groupBy("FILE_PATH").mean().collect()(0)(0).toString)
+    val hd_conf = spark.sparkContext.hadoopConfiguration
+    val fs = FileSystem.get(hd_conf)
+    var dirPath = new Path("/user/MobiScore_DataSource/MobiCS_revenue")
+    var files = fs.listStatus(dirPath)
 
-    df = df.withColumn("tmp", split(df("_c0"), "\\|"))
+    var df_revenue_total = spark.emptyDataFrame
 
-//    df = df.withColumn("col0", df("tmp").getItem(0))
-//          .withColumn("col1", df("tmp").getItem(1))
-//          .withColumn("col2", df("tmp").getItem(2))
-//          .withColumn("col3", df("tmp").getItem(3))
-//          .withColumn("col4", df("tmp").getItem(4))
-//          .withColumn("col5", df("tmp").getItem(5))
-//          .withColumn("col6", df("tmp").getItem(6))
-//          .withColumn("col7", df("tmp").getItem(7))
+    val START_MONTH = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
+    val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
-    val num_of_columns : Int = toInt(configDf.groupBy("NUM_OF_COLUMN").mean().collect()(0)(0).toString)
+    val MONTH_GAP = 3
 
-    for (i <- 0 until num_of_columns ){
-      df = df.withColumn("col".concat(i.toString), df("tmp").getItem(i))
+    for (i <- START_MONTH to START_MONTH + MONTH_GAP){
+      for (file <- files) {
+        val month_real = toInt(file.getPath.toString.slice(89, 89 + 2))
+        val year = toInt(file.getPath.toString.slice(85, 85 + 4))
+
+        if(i == month_real && year == YEAR){
+          val rev_mix_month = "REV_MIX_"+month_real
+
+          val df_rev = spark.read.parquet(file.getPath.toString)
+            .withColumn(rev_mix_month, when(col("_c3") > 0,1)
+              .otherwise(0) + when(col("_c4") > 0,1)
+              .otherwise(0) + when(col("_c5") > 0,1)
+              .otherwise(0) + when(col("_c6") > 0,1)
+              .otherwise(0))
+            .withColumnRenamed("_c2", "rev_value_"+month_real)
+            .drop("_c1", "_c3", "_c4", "_c5", "_c6")
+
+          if(df_revenue_total == spark.emptyDataFrame) {
+            df_revenue_total = df_rev.withColumnRenamed("_c0", "new_id")
+                                     .withColumn("CREDIT_MIX", df_rev(rev_mix_month))
+          } else {
+            df_revenue_total = df_revenue_total.join(df_rev, df_revenue_total("new_id") === df_rev("_c0"))
+              .withColumn("CREDIT_MIX", (df_revenue_total("CREDIT_MIX") + df_rev(rev_mix_month)))
+              .drop("_c0", "col1", "col2")
+          }
+
+          df_revenue_total.show(false)
+        }
+      }
     }
 
-    df = df.drop(df("_c0"))
-    df = df.drop(df("tmp"))
-    df = df.drop(df("FileName"))
+    df_revenue_total.show(false)
 
-    df.printSchema()
+    var df_rev_score = df_revenue_total.withColumn("SCORE_CREDIT_MIX", df_revenue_total("CREDIT_MIX") * 2 * 4 + (110-24*4))
 
-    df.show(30)
+    df_rev_score = df_rev_score.na.fill(0, Array("SCORE_CREDIT_MIX"))
+    df_rev_score.show(false)
 
-   df.write.format("org.apache.hadoop.hbase.spark")
-     .option("hbase.table", configDf.groupBy("TABLE_NAME").mean().collect()(0)(0).toString)
-     .option("hbase.columns.mapping", configDf.groupBy("TABLE_SCHEMA").mean().collect()(0)(0).toString)
-     .save()
+    df_rev_score.agg(max("SCORE_CREDIT_MIX"), min("SCORE_CREDIT_MIX")).show()
+
+    df_rev_score.write.mode("overwrite").parquet("/user/MobiScore_Output/credit_mix_2")
 
    println("Done")
   }
