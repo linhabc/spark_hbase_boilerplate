@@ -38,7 +38,7 @@ object Main{
     val START_MONTH = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
     val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
-    val MONTH_GAP = 3
+    val MONTH_GAP = 2
 
     for (i <- START_MONTH to START_MONTH + MONTH_GAP){
       for (file <- files) {
