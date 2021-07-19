@@ -102,7 +102,7 @@ object Main{
     vlr_monthly_total.show(false)
 
     // sub_los
-    val df_los = spark.read.parquet("/user/MobiScore_DataSource/MobiCS_subscriber/FileName=subscriber_20200"+(START_MONTH+2)+".txt")
+    val df_los = spark.read.parquet("/user/MobiScore_DataSource/MobiCS_subscriber/FileName=subscriber_202101.txt")
     val dfc_los = df_los.withColumn("LOS",  months_between(current_date(),col("_c1")).cast("Integer"))
                         .drop("_c1", "_c2", "_c3", "_c4", "_c5", "_c6", "_c7")
     dfc_los.show(false)
