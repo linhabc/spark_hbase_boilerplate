@@ -1,9 +1,11 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{lit, when}
 
 object MyPredicted{
+  Logger.getLogger("org").setLevel(Level.ERROR)
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array [String]){
@@ -67,11 +69,11 @@ object MyPredicted{
 
     score.createOrReplaceTempView("score_predict")
 
-    val real_score = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
-    real_score.createOrReplaceTempView("real_score")
+//    val real_score = spark.read.parquet("/user/MobiScore_DataSource/M_SCORE/FileName=M_SCORE.txt")
+//    real_score.createOrReplaceTempView("real_score")
 
-    val result = spark.sql("select count(*) from (select r._c0, _c12, s.score, (score/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 ) as tmp where tmp.ratio >= 25 and tmp.ratio <= 38")
-    result.show(false)
+//    val result = spark.sql("select count(*) from (select r._c0, _c12, s.score, (score/_c12*100) ratio from score_predict s, real_score r where s.col0 = r._c0 ) as tmp where tmp.ratio >= 25 and tmp.ratio <= 38")
+//    result.show(false)
     println("Done")
   }
 }
