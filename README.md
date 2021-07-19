@@ -1,4 +1,4 @@
-# spark_hbase_boilerplate
+# post_payment_boilerplate
 
 ## Install and run hbase in docker
 
@@ -9,14 +9,15 @@
 ## Run spark application
 
 - sbt assembly
-- \${spark-install-lib}/spark/bin/spark-submit --class "Main" --master local[4] target/scala-2.11/spark_hbase.jar --files config.json
+- \${spark-install-lib}/spark/bin/spark-submit --class "Main" --master local[4] target/scala-2.11/post_payment.jar --files config_post_payment.json
 
 ## Link
 
 - http://localhost:16010/master-status for the Master Server
 
 ## mbScore
-spark-submit --conf spark.driver.memory=20g --class "GetUserSubscribe" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
-spark-submit --conf spark.driver.memory=20g --class "UsingPacket" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
-spark-submit --conf spark.driver.memory=20g --class "CreateModelDataFrame" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
-spark-submit --conf spark.driver.memory=15g --class "MyPredicted" --master local[16] spark_hbase.jar --files file:///home/linh.nln/config.json
+
+spark-submit --conf spark.driver.memory=20g --class "GetUserSubscribe" --master local[16] post_payment.jar --files file:///home/linh.nln/config_post_payment.json
+spark-submit --conf spark.driver.memory=20g --class "UsingPacket" --master local[16] post_payment.jar --files file:///home/linh.nln/config_post_payment.json
+spark-submit --conf spark.driver.memory=20g --class "CreateModelDataFrame" --master local[16] post_payment.jar --files file:///home/linh.nln/config_post_payment.json
+spark-submit --conf spark.driver.memory=15g --class "MyPredicted" --master local[16] post_payment.jar --files file:///home/linh.nln/config_post_payment.json
