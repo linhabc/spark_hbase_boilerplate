@@ -24,7 +24,7 @@ object UsingPacket {
     val files = fs.listStatus(dirPath)
 
     // get phone number
-    var df = spark.read.parquet("/user/MobiScore_Output/post_payment/subscriber.parquet")
+    var df = spark.read.parquet("/user/MobiScore_Output/subscriber.parquet")
     df = df.select("col0").distinct()
 
     val const_df = df
