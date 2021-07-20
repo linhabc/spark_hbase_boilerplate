@@ -11,7 +11,7 @@ libraryDependencies += "org.apache.spark" %% "spark-mllib" % "2.4.6" % "provided
 
 libraryDependencies += "org.apache.hbase.connectors.spark" % "hbase-spark" % "1.0.0"
 
-assemblyJarName in assembly := "spark_hbase.jar"
+assemblyJarName in assembly := "post_payment.jar"
 
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
