@@ -2,6 +2,8 @@
   "QUORUM": "datamining-01,mbfscore-app01,mbfscore-app02",
   "PORT": "2181",
   "FILE_PATH": "/user/MobiScore_DataSource/subscriber",
+  "MONTH": "07",
+  "YEAR" : "2021",
   "TABLE_NAME": "hbase_db",
   "TABLE_SCHEMA": "col0 STRING :key , col1 STRING mb_sc:ACTIVE_DATE, col2 STRING mb_sc:EXPIRE_DATE, col3 STRING mb_sc:SUB_TYPE, col4 STRING mb_sc:SUB_PREFIX, col5 INT mb_sc:AGE, col6 INT mb_sc:SEX, col7 STRING mb_sc:SOURCE_SYS",
   "NUM_OF_COLUMN": "8"

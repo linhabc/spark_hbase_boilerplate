@@ -1,9 +1,11 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.hbase.spark.HBaseContext
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.spark.sql.functions.{sum, count, when, col}
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.functions.{col, count, sum, when}
 
 object Main{
+  Logger.getLogger("org").setLevel(Level.ERROR)
   def toInt(s: String): Int = util.Try(s.toInt).getOrElse(0)
 
   def main(args: Array [String]){
@@ -15,6 +17,8 @@ object Main{
 
   val fileName = args(1)
   val configDf = spark.read.option("multiline", "true").json(fileName)
+   val MONTH = (configDf.groupBy("MONTH").mean().collect()(0)(0).toString)
+   val YEAR = (configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
    val conf = HBaseConfiguration.create()
    conf.set("hbase.zookeeper.quorum", configDf.groupBy("QUORUM").mean().collect()(0)(0).toString)
@@ -45,11 +49,11 @@ object Main{
     credit_mix.count()
     credit_mix.createOrReplaceTempView("credit_mix")
 
-    var pre_payment = spark.read.parquet("/user/MobiScore_Output/pre_payment/score.parquet")
+    var pre_payment = spark.read.parquet("/user/MobiScore_Output/pre_payment/score_"+YEAR+MONTH+".parquet")
     pre_payment = pre_payment.select("isdn", "score")
     pre_payment = pre_payment.withColumnRenamed("isdn", "col0")
 
-    var pre_payment_rev = spark.read.parquet("/user/MobiScore_Output/pre_payment/pre_payment_revenue.parquet")
+    var pre_payment_rev = spark.read.parquet("/user/MobiScore_Output/pre_payment/pre_payment_revenue_"+YEAR+MONTH+".parquet")
     pre_payment_rev = pre_payment_rev.select("_c0", "score")
     pre_payment_rev = pre_payment_rev.withColumnRenamed("isdn", "col0")
     pre_payment_rev.show(false)
@@ -90,12 +94,17 @@ object Main{
     payment_history.count
     payment_history.createOrReplaceTempView("payment_history")
 
-    var amount_owned_pos = spark.read.parquet("/user/MobiScore_Output/amount_owed/amount_owed-scoring-pos-sub-202010.parquet")
-    amount_owned_pos = amount_owned_pos.select("ISDN", "SCORE")
-    amount_owned_pos.count()
-    var amount_owned_pre = spark.read.parquet("/user/MobiScore_Output/amount_owed/amount_owed-scoring-pre-sub-202010.parquet")
+    payment_history.write.mode("overwrite").parquet("/user/MobiScore_Output/payment_history.parquet")
+
+    var amount_owned_pos = spark.read.parquet("/user/MobiScore_Output/amount_owed/amount_owed-scoring-pos-"+YEAR+MONTH+".parquet")
+    amount_owned_pos = amount_owned_pos.select("ISDN", "AO_SCORE")
+   amount_owned_pos = amount_owned_pos.withColumnRenamed("AO_SCORE", "SCORE")
+
+   amount_owned_pos.count()
+    var amount_owned_pre = spark.read.parquet("/user/MobiScore_Output/amount_owed/amount_owed-scoring-pre-"+YEAR+MONTH+".parquet")
     amount_owned_pre.count()
-    amount_owned_pre = amount_owned_pre.select("ISDN", "SCORE")
+    amount_owned_pre = amount_owned_pre.select("ISDN", "AO_SCORE")
+   amount_owned_pre = amount_owned_pre.withColumnRenamed("AO_SCORE", "SCORE")
     var amount_owned = amount_owned_pre.union(amount_owned_pos)
     // amount_owned = amount_owned.withColumn("ao_score", when(col("ao_score") < 99, 99).otherwise(col("ao_score")))
     amount_owned.show(false)
