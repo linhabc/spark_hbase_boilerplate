@@ -16,6 +16,10 @@ object UsingPacket {
     val spark = SparkSession
       .builder()
       .appName("Spark")
+      .config("spark.sql.shuffle.partitions", 300)
+      .config("spark.worker.cleanup.enabled", "True")
+      .config("spark.driver.maxResultSize", "10G")
+      .config("spark.local.dir", "/tmp/spark-temp")
       .getOrCreate()
 
     val hd_conf = spark.sparkContext.hadoopConfiguration
