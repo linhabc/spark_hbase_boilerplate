@@ -29,20 +29,29 @@ object CreateModelDataFrame{
     val hd_conf = spark.sparkContext.hadoopConfiguration
     val fs = FileSystem.get(hd_conf)
     val dirPath = new Path("/user/MobiScore_DataSource/MobiCS_debit")
-    val files = fs.listStatus(dirPath )
+    val files = fs.listStatus(dirPath)
 
     // get phone number
     var score = spark.read.parquet("/user/MobiScore_Output/subscriber.parquet")
     score = score.select("col0")
 
     for (i <- startMonth to startMonth + 5){
+      var tmpMonth = i
+      if(i > 12){
+        tmpMonth = i - 12;
+      }
+
+      println("tmpMonth ", tmpMonth)
+
       for (file <- files){
         val month = toInt(file.getPath.toString.slice(85, 85 + 2))
         val year = toInt(file.getPath.toString.slice(81, 81 + 4))
 
-          if( i == startMonth  && year == YEAR) {
-            println(month)
-            println(year)
+          if( month == tmpMonth  && year == YEAR) {
+            println("startMonth "+startMonth)
+
+            println("month ", month)
+            println("year ", year)
             println(file.getPath.toString)
 
             var df_debit = spark.read.parquet(file.getPath.toString)
@@ -50,7 +59,7 @@ object CreateModelDataFrame{
             df_debit = df_debit.drop(df_debit("_c0"))
 
             df_debit.count()
-            df_debit.show(false)
+//            df_debit.show(false)
 
             // read using packet dataframe
             val packet_df = spark.read.parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+month+")("+YEAR+").parquet")
@@ -64,11 +73,11 @@ object CreateModelDataFrame{
             result = result.na.fill(0)
             result = result.na.fill("0")
 
-            result.show(false)
+//            result.show(false)
 
             result.createOrReplaceTempView("table")
             result = spark.sql("select _c1, sum(_c3) as SUM_USE, sum(_c5) as SUM_PAY, max(_c6) as USING_BANK_tmp from table group by _c1")
-            result.show(false)
+//            result.show(false)
 
             // filter outlier then calculate avg value
             val result_filter = result.filter(result("SUM_USE") < 4000000 || result("SUM_PAY") < 4000000)
@@ -90,7 +99,7 @@ object CreateModelDataFrame{
             result = result.withColumn("USING_BANK", result("USING_BANK_tmp") === 2)
             result = result.withColumn("NOT_USING_PACKET", result("HIGHER_THAN_AVG_PAYING") && result("packet_"+month) === 0)
 
-            result.show(false)
+//            result.show(false)
 
             //calculate payment history score
             result = result.withColumn("sc_1_"+ month, when(col("PAY_IN_TIME") === true, 1).otherwise(0))

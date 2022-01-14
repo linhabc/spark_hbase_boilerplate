@@ -43,12 +43,18 @@ object MyPredicted{
 
     var score = spark.read.parquet("/user/MobiScore_Output/post_payment/score_model_dataframe.parquet")
 
-    score = score.withColumn("score_in_time", (score("sc_1_"+startMonth)+score("sc_1_"+(startMonth+1))+score("sc_1_"+(startMonth+2))+score("sc_1_"+(startMonth+3))+score("sc_1_"+(startMonth+4))+score("sc_1_"+(startMonth+5)))*SCORE_IN_TIME)
-    score = score.withColumn("score_spare_payment", (score("sc_2_"+startMonth)+score("sc_2_"+(startMonth+1))+score("sc_2_"+(startMonth+2))+score("sc_2_"+(startMonth+3))+score("sc_2_"+(startMonth+4))+score("sc_2_"+(startMonth+5)))*SCORE_SPARE_PAYMENT)
-    score = score.withColumn("score_avg_using", (score("sc_3_"+startMonth)+score("sc_3_"+(startMonth+1))+score("sc_3_"+(startMonth+2))+score("sc_3_"+(startMonth+3))+score("sc_3_"+(startMonth+4))+score("sc_3_"+(startMonth+5)))*SCORE_AVG_USING)
-    score = score.withColumn("score_avg_paying", (score("sc_4_"+startMonth)+score("sc_4_"+(startMonth+1))+score("sc_4_"+(startMonth+2))+score("sc_4_"+(startMonth+3))+score("sc_4_"+(startMonth+4))+score("sc_4_"+(startMonth+5)))*SCORE_AVG_PAYING)
-    score = score.withColumn("score_using_bank", (score("sc_5_"+startMonth)+score("sc_5_"+(startMonth+1))+score("sc_5_"+(startMonth+2))+score("sc_5_"+(startMonth+3))+score("sc_5_"+(startMonth+4))+score("sc_5_"+(startMonth+5)))*SCORE_USING_BANK)
-    score = score.withColumn("score_not_using_packet", (score("sc_6_"+startMonth)+score("sc_6_"+(startMonth+1))+score("sc_6_"+(startMonth+2))+score("sc_6_"+(startMonth+3))+score("sc_6_"+(startMonth+4))+score("sc_6_"+(startMonth+5)))*SCORE_NOT_USING_PACKET)
+    val second_Month = if(startMonth+ 1 <= 12) startMonth+1 else startMonth+1 -12;
+    val third_Month = if(second_Month+ 2 <= 12) startMonth+2 else startMonth+2 -12;
+    val fourth_Month = if(startMonth+ 3 <= 12) startMonth+3 else startMonth+3 -12;
+    val fifth_Month = if(startMonth+ 4 <= 12) startMonth+4 else startMonth+4 -12;
+    val sixth_Month = if(startMonth+ 5 <= 12) startMonth+5 else startMonth+5 -12;
+
+    score = score.withColumn("score_in_time", (score("sc_1_"+startMonth)+score("sc_1_"+(second_Month))+score("sc_1_"+(third_Month))+score("sc_1_"+(fourth_Month))+score("sc_1_"+(fifth_Month))+score("sc_1_"+(sixth_Month)))*SCORE_IN_TIME)
+    score = score.withColumn("score_spare_payment", (score("sc_2_"+startMonth)+score("sc_2_"+(second_Month))+score("sc_2_"+(third_Month))+score("sc_2_"+(fourth_Month))+score("sc_2_"+(fifth_Month))+score("sc_2_"+(sixth_Month)))*SCORE_SPARE_PAYMENT)
+    score = score.withColumn("score_avg_using", (score("sc_3_"+startMonth)+score("sc_3_"+(second_Month))+score("sc_3_"+(third_Month))+score("sc_3_"+(fourth_Month))+score("sc_3_"+(fifth_Month))+score("sc_3_"+(sixth_Month)))*SCORE_AVG_USING)
+    score = score.withColumn("score_avg_paying", (score("sc_4_"+startMonth)+score("sc_4_"+(second_Month))+score("sc_4_"+(third_Month))+score("sc_4_"+(fourth_Month))+score("sc_4_"+(fifth_Month))+score("sc_4_"+(sixth_Month)))*SCORE_AVG_PAYING)
+    score = score.withColumn("score_using_bank", (score("sc_5_"+startMonth)+score("sc_5_"+(second_Month))+score("sc_5_"+(third_Month))+score("sc_5_"+(fourth_Month))+score("sc_5_"+(fifth_Month))+score("sc_5_"+(sixth_Month)))*SCORE_USING_BANK)
+    score = score.withColumn("score_not_using_packet", (score("sc_6_"+startMonth)+score("sc_6_"+(second_Month))+score("sc_6_"+(third_Month))+score("sc_6_"+(fourth_Month))+score("sc_6_"+(fifth_Month))+score("sc_6_"+(sixth_Month)))*SCORE_NOT_USING_PACKET)
 
     score = score.select("col0","score_in_time","score_spare_payment", "score_avg_using", "score_avg_paying", "score_using_bank", "score_not_using_packet")
     score = score.na.drop()

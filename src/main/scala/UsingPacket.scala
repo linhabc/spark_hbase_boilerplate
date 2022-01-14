@@ -39,12 +39,17 @@ object UsingPacket {
     val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
     for (i <- START_MONTH to START_MONTH + 5){
+      var tmpMonth = i
+      if(i>12){
+        tmpMonth = i - 12;
+      }
+
       for (file <- files){
         // get month from filePath file.getPath.toString
         val month_real = toInt(file.getPath.toString.slice(105, 105 + 2))
         val year = toInt(file.getPath.toString.slice(101, 101 + 4))
         //filter months
-        if (i == month_real && year == YEAR){
+        if (tmpMonth == month_real && year == YEAR){
           println(year)
           println(file.getPath.toString)
           println(month_real)
@@ -76,7 +81,7 @@ object UsingPacket {
       }
 
       df.show(false)
-      df.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+i+")("+YEAR+").parquet")
+      df.write.mode("overwrite").parquet("/user/MobiScore_Output/post_payment/mobile_internet/mobile_internet_dataframe("+tmpMonth+")("+YEAR+").parquet")
       df = const_df
     }
 
