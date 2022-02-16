@@ -125,7 +125,7 @@ object Main{
     total_score.show(false)
 
 
-    total_score.write.mode("overwrite").parquet("/user/MobiScore_Output/score_output.parquet")
+    total_score.write.mode("overwrite").parquet("/user/MobiScore_Output/"+MONTH+YEAR+"_score_output.parquet")
 
    println("Done")
   }
