@@ -44,10 +44,16 @@ object MyPredicted{
     var score = spark.read.parquet("/user/MobiScore_Output/post_payment/score_model_dataframe.parquet")
 
     val second_Month = if(startMonth+ 1 <= 12) startMonth+1 else startMonth+1 -12;
-    val third_Month = if(second_Month+ 2 <= 12) startMonth+2 else startMonth+2 -12;
+    val third_Month = if(startMonth+ 2 <= 12) startMonth+2 else startMonth+2 -12;
     val fourth_Month = if(startMonth+ 3 <= 12) startMonth+3 else startMonth+3 -12;
     val fifth_Month = if(startMonth+ 4 <= 12) startMonth+4 else startMonth+4 -12;
     val sixth_Month = if(startMonth+ 5 <= 12) startMonth+5 else startMonth+5 -12;
+
+    println(startMonth)
+    println(second_Month)
+    println(third_Month)
+    println(fifth_Month)
+    println(sixth_Month)
 
     score = score.withColumn("score_in_time", (score("sc_1_"+startMonth)+score("sc_1_"+(second_Month))+score("sc_1_"+(third_Month))+score("sc_1_"+(fourth_Month))+score("sc_1_"+(fifth_Month))+score("sc_1_"+(sixth_Month)))*SCORE_IN_TIME)
     score = score.withColumn("score_spare_payment", (score("sc_2_"+startMonth)+score("sc_2_"+(second_Month))+score("sc_2_"+(third_Month))+score("sc_2_"+(fourth_Month))+score("sc_2_"+(fifth_Month))+score("sc_2_"+(sixth_Month)))*SCORE_SPARE_PAYMENT)

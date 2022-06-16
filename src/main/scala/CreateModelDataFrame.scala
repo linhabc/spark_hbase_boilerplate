@@ -24,7 +24,7 @@ object CreateModelDataFrame{
     val fileName = args(1)
     val configDf = spark.read.option("multiline", "true").json(fileName)
     val startMonth = toInt(configDf.groupBy("START_MONTH").mean().collect()(0)(0).toString)
-    val YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
+    var YEAR = toInt(configDf.groupBy("YEAR").mean().collect()(0)(0).toString)
 
     val hd_conf = spark.sparkContext.hadoopConfiguration
     val fs = FileSystem.get(hd_conf)
@@ -35,10 +35,15 @@ object CreateModelDataFrame{
     var score = spark.read.parquet("/user/MobiScore_Output/subscriber.parquet")
     score = score.select("col0")
 
+    var flag = false
     for (i <- startMonth to startMonth + 5){
       var tmpMonth = i
       if(i > 12){
         tmpMonth = i - 12;
+        if (flag == false) {
+          YEAR = YEAR + 1;
+          flag = true;
+        }
       }
 
       println("tmpMonth ", tmpMonth)
